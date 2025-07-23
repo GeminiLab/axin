@@ -55,7 +55,7 @@ impl Parse for FunctionSpec {
     }
 }
 
-/// Collection of arguments for the [`axin`](crate::axin) macro.
+/// Collection of arguments for the [`axin`](macro@crate::axin) macro.
 ///
 /// Contains a comma-separated list of macro parameters such as
 /// `prologue(...)`, `on_enter(...)`, `decorator(...)`, and `on_exit(...)`.
@@ -63,7 +63,7 @@ pub struct AxinArgs {
     pub args: Punctuated<AxinArg, Token![,]>,
 }
 
-/// Individual argument types supported by the [`axin`](crate::axin) macro.
+/// Individual argument types supported by the [`axin`](macro@crate::axin) macro.
 ///
 /// Each variant represents a specific instrumentation feature:
 /// - Prologue: Statements inserted at function start

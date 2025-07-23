@@ -129,7 +129,7 @@
 //!     // Doing expensive computation...
 //!     // Took: ...
 //!     // Result: 42
-//! 
+//!
 //!     let decorated_result = decorated_function();
 //!     println!("Decorated result: {}", decorated_result);
 //!     // Output:
