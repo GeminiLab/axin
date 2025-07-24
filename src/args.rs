@@ -124,6 +124,16 @@ impl Parse for AxinArg {
             }),
             param_names::ON_ENTER | param_names::ON_EXIT => {
                 let funcs: FunctionSpecList = content.parse()?;
+
+                if funcs.list.is_empty() {
+                    let msg = format!(
+                        "The '{}' parameter requires at least one function.",
+                        name.to_string()
+                    );
+
+                    return Err(syn::Error::new_spanned(name, msg));
+                }
+
                 match name.to_string().as_str() {
                     param_names::ON_ENTER => Ok(AxinArg::OnEnter { funcs }),
                     param_names::ON_EXIT => Ok(AxinArg::OnExit { funcs }),

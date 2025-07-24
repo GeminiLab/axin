@@ -175,6 +175,30 @@
 //! 4. The original function body is executed, after which
 //! 5. The control flow returns to the decorator, and after it completes,
 //! 6. The exit hook functions (if specified) are executed last in declaration order.
+//!
+//! ## Compilation Errors
+//!
+//! `axin` will produce user-friendly compilation errors if the provided arguments are invalid, including:
+//!
+//! ### Unknown Parameters
+//!
+//! If an unknown parameter is provided, `axin` will generate a compilation error indicating that the parameter is not
+//! recognized, and gives a list of valid parameters.
+//!
+//! ```compile_fail
+//! #[axin(unknown_param)]
+//! fn my_function() {}
+//! ```
+//!
+//! ### Empty Hook Lists
+//!
+//! If a hook list (like `on_enter` or `on_exit`) is empty, `axin` will generate an error indicating that at least one
+//! function is required for that parameter.
+//!
+//! ```compile_fail
+//! #[axin(on_enter())]
+//! fn my_function() {}
+//! ```
 
 use proc_macro::TokenStream;
 use quote::quote;
