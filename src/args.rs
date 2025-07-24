@@ -126,10 +126,7 @@ impl Parse for AxinArg {
                 let funcs: FunctionSpecList = content.parse()?;
 
                 if funcs.list.is_empty() {
-                    let msg = format!(
-                        "The '{}' parameter requires at least one function.",
-                        name.to_string()
-                    );
+                    let msg = format!("The '{}' parameter requires at least one function.", name);
 
                     return Err(syn::Error::new_spanned(name, msg));
                 }
