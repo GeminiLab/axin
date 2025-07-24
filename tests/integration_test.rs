@@ -261,4 +261,29 @@ Exiting param decorator: test_param
         let result = test_parameterized_decorator_with_param(100);
         assert_eq!(result, 101, "Expected result to be 101");
     }
+
+    // test mixed multiple hooks with other features
+    #[axin(
+        on_enter(on_enter_hook, parameterized_hook("second_enter_hook")),
+        prologue(println_test!("Prologue with multiple hooks");),
+        on_exit(parameterized_hook("first_exit_hook")),
+        on_exit(on_exit_hook)
+    )]
+    fn test_mixed_multiple_hooks() {
+        println_test!("Inside test_mixed_multiple_hooks function");
+    }
+
+    #[test]
+    #[axin(decorator(single_threaded_test(
+        r#"Entering hook
+Param hook: second_enter_hook
+Prologue with multiple hooks
+Inside test_mixed_multiple_hooks function
+Param hook: first_exit_hook
+Exiting hook
+"#
+    )))]
+    fn call_test_mixed_multiple_hooks() {
+        test_mixed_multiple_hooks();
+    }
 }

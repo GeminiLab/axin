@@ -62,11 +62,8 @@ jobs:
 
     - name: Run examples
       run: |
-        cargo run --example 01_basic_prologue
-        cargo run --example 02_entry_exit
-        cargo run --example 03_decorators
-        cargo run --example 04_combined_features
-        cargo run --example 05_real_world
+        chmod +x examples/run_all_examples.sh
+        ./examples/run_all_examples.sh
 
     - name: Test documentation
       if: matrix.rust == 'stable'

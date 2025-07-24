@@ -59,6 +59,25 @@ Practical usage scenarios simulating real applications:
 cargo run --example 05_real_world
 ```
 
+### Run All Examples
+
+To run all examples at once, use the provided script:
+
+```bash
+# From the project root
+./examples/run_all_examples.sh
+
+# Or from anywhere
+/path/to/axin/examples/run_all_examples.sh
+```
+
+This script will:
+- Automatically discover all `.rs` files in the examples directory
+- Build all examples to check for compilation errors
+- Run each example in sequence
+- Provide colored output with success/failure status
+- Generate a summary report
+
 ## Feature Documentation
 
 ### Prologue

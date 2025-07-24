@@ -28,7 +28,11 @@ fn with_cleanup() {
     println!("Doing some work");
 }
 
-#[axin(on_enter(log_start("with_both")), on_exit(log_end("with_both")))]
+#[axin(
+    on_enter(setup, log_start("with_both")),
+    on_exit(log_end("with_both")),
+    on_exit(cleanup)
+)]
 fn with_both() {
     println!("Doing some work with full logging");
 }

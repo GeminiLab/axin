@@ -18,8 +18,8 @@ use syn::{parse_quote, FnArg, Ident, ItemFn, Pat, Stmt, Token};
 /// - `input_fn`: The original function to be enhanced
 /// - `prologue_stmts`: Statements to insert at function start
 /// - `decorator_fn`: Optional decorator function specification
-/// - `on_enter_fn`: Optional entry hook function specification
-/// - `on_exit_fn`: Optional exit hook function specification
+/// - `on_enter_funcs`: List of entry hook function specifications
+/// - `on_exit_funcs`: List of exit hook function specifications
 ///
 /// ## Returns
 ///
@@ -28,8 +28,8 @@ pub fn generate_enhanced_function(
     input_fn: ItemFn,
     prologue_stmts: Vec<Stmt>,
     decorator_fn: Option<FunctionSpec>,
-    on_enter_fn: Option<FunctionSpec>,
-    on_exit_fn: Option<FunctionSpec>,
+    on_enter_funcs: Vec<FunctionSpec>,
+    on_exit_funcs: Vec<FunctionSpec>,
 ) -> proc_macro2::TokenStream {
     let original_fn = input_fn.clone();
     let fn_vis = &original_fn.vis;
@@ -62,8 +62,8 @@ pub fn generate_enhanced_function(
     // Build the final function body
     let mut final_stmts = Vec::new();
 
-    // Add on_enter call
-    if let Some(on_enter) = &on_enter_fn {
+    // Add on_enter calls (in order)
+    for on_enter in &on_enter_funcs {
         let call_expr = generate_function_call(on_enter);
         final_stmts.push(parse_quote! { #call_expr; });
     }
@@ -87,8 +87,8 @@ pub fn generate_enhanced_function(
         });
     }
 
-    // Add on_exit call
-    if let Some(on_exit) = &on_exit_fn {
+    // Add on_exit calls (in order)
+    for on_exit in &on_exit_funcs {
         let call_expr = generate_function_call(on_exit);
         final_stmts.push(parse_quote! { #call_expr; });
     }
@@ -155,27 +155,27 @@ fn generate_decorator_call(
 /// Process and extract components from attribute arguments.
 ///
 /// Parses the macro arguments and separates them into their respective components:
-/// prologue statements, decorator specification, entry function, and exit function.
+/// prologue statements, decorator specification, entry functions, and exit functions.
 ///
 /// ## Returns
 ///
 /// A tuple containing:
 /// - `Vec<Stmt>`: Prologue statements to insert
 /// - `Option<FunctionSpec>`: Decorator function specification
-/// - `Option<FunctionSpec>`: Entry hook function specification  
-/// - `Option<FunctionSpec>`: Exit hook function specification
+/// - `Vec<FunctionSpec>`: List of entry hook function specifications  
+/// - `Vec<FunctionSpec>`: List of exit hook function specifications
 pub fn process_attribute_args(
     attribute_args: crate::args::AxinArgs,
 ) -> (
     Vec<Stmt>,
     Option<FunctionSpec>,
-    Option<FunctionSpec>,
-    Option<FunctionSpec>,
+    Vec<FunctionSpec>,
+    Vec<FunctionSpec>,
 ) {
     let mut prologue_stmts: Vec<Stmt> = Vec::new();
     let mut decorator_fn: Option<FunctionSpec> = None;
-    let mut on_enter_fn: Option<FunctionSpec> = None;
-    let mut on_exit_fn: Option<FunctionSpec> = None;
+    let mut on_enter_funcs: Vec<FunctionSpec> = Vec::new();
+    let mut on_exit_funcs: Vec<FunctionSpec> = Vec::new();
 
     for arg in attribute_args.args.into_iter() {
         match arg {
@@ -191,11 +191,13 @@ pub fn process_attribute_args(
                     }
                 }
             }
-            AxinArg::OnEnter { func } => {
-                on_enter_fn = Some(func);
+            AxinArg::OnEnter { funcs } => {
+                // Add all functions from this on_enter declaration
+                on_enter_funcs.extend(funcs.list);
             }
-            AxinArg::OnExit { func } => {
-                on_exit_fn = Some(func);
+            AxinArg::OnExit { funcs } => {
+                // Add all functions from this on_exit declaration
+                on_exit_funcs.extend(funcs.list);
             }
             AxinArg::Decorator { func } => {
                 decorator_fn = Some(func);
@@ -203,5 +205,5 @@ pub fn process_attribute_args(
         }
     }
 
-    (prologue_stmts, decorator_fn, on_enter_fn, on_exit_fn)
+    (prologue_stmts, decorator_fn, on_enter_funcs, on_exit_funcs)
 }

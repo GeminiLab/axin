@@ -38,6 +38,14 @@ pub enum FunctionSpec {
     WithArgs(Path, Punctuated<Expr, Token![,]>),
 }
 
+/// Multiple function specifications for hooks that can accept multiple functions.
+///
+/// This type allows empty lists but we'll reject them later in the macro processing.
+#[derive(Clone)]
+pub struct FunctionSpecList {
+    pub list: Punctuated<FunctionSpec, Token![,]>,
+}
+
 impl Parse for FunctionSpec {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let path: Path = input.parse()?;
@@ -55,6 +63,14 @@ impl Parse for FunctionSpec {
     }
 }
 
+impl Parse for FunctionSpecList {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        Ok(FunctionSpecList {
+            list: Punctuated::parse_terminated(input)?,
+        })
+    }
+}
+
 /// Collection of arguments for the [`axin`](macro@crate::axin) macro.
 ///
 /// Contains a comma-separated list of macro parameters such as
@@ -67,22 +83,22 @@ pub struct AxinArgs {
 ///
 /// Each variant represents a specific instrumentation feature:
 /// - Prologue: Statements inserted at function start
-/// - OnEnter: Function called before main function
-/// - OnExit: Function called after main function
+/// - OnEnter: Functions called before main function (supports multiple)
+/// - OnExit: Functions called after main function (supports multiple)
 /// - Decorator: Function wrapper for the main function
 pub enum AxinArg {
     /// `prologue(statement1; statement2; ...)`
     ///
     /// Statements to insert at the beginning of the function body.
     Prologue { stmts: Vec<Stmt> },
-    /// `on_enter(function)` or `on_enter(function(args))`
+    /// `on_enter(function)`, `on_enter(function(args))`, or `on_enter(func1, func2, func3)`
     ///
-    /// Function to execute before the main function.
-    OnEnter { func: FunctionSpec },
-    /// `on_exit(function)` or `on_exit(function(args))`
+    /// Functions to execute before the main function. Supports multiple functions.
+    OnEnter { funcs: FunctionSpecList },
+    /// `on_exit(function)`, `on_exit(function(args))`, or `on_exit(func1, func2, func3)`
     ///
-    /// Function to execute after the main function.
-    OnExit { func: FunctionSpec },
+    /// Functions to execute after the main function. Supports multiple functions.
+    OnExit { funcs: FunctionSpecList },
     /// `decorator(function)` or `decorator(function(args))`
     ///
     /// Decorator function to wrap the main function.
@@ -106,14 +122,17 @@ impl Parse for AxinArg {
             param_names::PROLOGUE => Ok(AxinArg::Prologue {
                 stmts: content.call(Block::parse_within)?,
             }),
-            param_names::ON_ENTER | param_names::ON_EXIT | param_names::DECORATOR => {
-                let func: FunctionSpec = content.parse()?;
+            param_names::ON_ENTER | param_names::ON_EXIT => {
+                let funcs: FunctionSpecList = content.parse()?;
                 match name.to_string().as_str() {
-                    param_names::ON_ENTER => Ok(AxinArg::OnEnter { func }),
-                    param_names::ON_EXIT => Ok(AxinArg::OnExit { func }),
-                    param_names::DECORATOR => Ok(AxinArg::Decorator { func }),
+                    param_names::ON_ENTER => Ok(AxinArg::OnEnter { funcs }),
+                    param_names::ON_EXIT => Ok(AxinArg::OnExit { funcs }),
                     _ => unreachable!(),
                 }
+            }
+            param_names::DECORATOR => {
+                let func: FunctionSpec = content.parse()?;
+                Ok(AxinArg::Decorator { func })
             }
             _ => {
                 let name_str = name.to_string();

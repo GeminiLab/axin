@@ -14,7 +14,8 @@
 //! ### Entry and Exit Hooks
 //!
 //! These hooks allow you to execute custom functions when entering or exiting the target function. It's also possible
-//! to specify arguments for these hooks, which can be used to pass context or configuration.
+//! to specify arguments for these hooks, which can be used to pass context or configuration. Multiple hooks can be
+//! specified both using separate declarations or within a single declaration.
 //!
 //! ```
 //! use axin::axin;
@@ -27,26 +28,50 @@
 //!     println!("Cleaning up: {}", msg);
 //! }
 //!
+//! fn init_logging() {
+//!     println!("Initializing logging");
+//! }
+//!
+//! fn validate_env() {
+//!     println!("Validating environment");
+//! }
+//!
+//! // Single hooks
 //! #[axin(on_enter(setup), on_exit(cleanup("Goodbye from function1!")))]
 //! fn function1() {
 //!     println!("Main logic");
 //! }
 //!
-//! #[axin(on_enter(setup), on_exit(cleanup("Goodnight from function2!")))]
+//! #[axin(on_enter(setup), on_enter(init_logging), on_exit(cleanup("Goodnight from function2!")))]
 //! fn function2() {
 //!     println!("Different logic");
 //! }
 //!
+//! // Multiple hooks in single declaration
+//! #[axin(on_enter(setup, init_logging, validate_env))]
+//! fn function3() {
+//!     println!("More logic");
+//! }
+//!
 //! fn main() {
 //!     function1();
-//!     function2();
 //!     // Output:
 //!     // Setting up
 //!     // Main logic
 //!     // Cleaning up: Goodbye from function1!
+//!
+//!     function2();
+//!     // Output:
 //!     // Setting up
+//!     // Initializing logging
 //!     // Different logic
 //!     // Cleaning up: Goodnight from function2!
+//!
+//!     function3();
+//!     // Setting up
+//!     // Initializing logging
+//!     // Validating environment
+//!     // More logic
 //! }
 //! ```
 //!
@@ -144,12 +169,12 @@
 //! ## Order of Execution
 //!
 //! The order of execution for the various Axin features is as follows:
-//! 1. Entry hook function (if specified) is executed first, then
+//! 1. Entry hook functions (if specified) are executed first in declaration order, then
 //! 2. Decorator function (if specified) is called, and when it calls the original function,
 //! 3. Prologue statements (if specified) are executed, and then
 //! 4. The original function body is executed, after which
 //! 5. The control flow returns to the decorator, and after it completes,
-//! 6. The exit hook function (if specified) is executed last.
+//! 6. The exit hook functions (if specified) are executed last in declaration order.
 
 use proc_macro::TokenStream;
 use quote::quote;
@@ -222,7 +247,7 @@ pub fn axin(args: TokenStream, input: TokenStream) -> TokenStream {
             Err(e) => return e.to_compile_error().into(),
         };
 
-        let (prologue_stmts, decorator_fn, on_enter_fn, on_exit_fn) =
+        let (prologue_stmts, decorator_fn, on_enter_funcs, on_exit_funcs) =
             process_attribute_args(attribute_args);
 
         // Process function enhancement according to the new design
@@ -230,8 +255,8 @@ pub fn axin(args: TokenStream, input: TokenStream) -> TokenStream {
             input_fn,
             prologue_stmts,
             decorator_fn,
-            on_enter_fn,
-            on_exit_fn,
+            on_enter_funcs,
+            on_exit_funcs,
         )
         .into()
     } else {

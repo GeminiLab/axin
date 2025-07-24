@@ -60,12 +60,16 @@ fn secure_operation() -> String {
     "Classified Information".to_string()
 }
 
-fn step2_begin() {
-    println!("2️⃣ OnEnter: Begin");
+fn step1_begin() {
+    println!("1️⃣ OnEnter: 1");
 }
 
-fn step6_end() {
-    println!("6️⃣ OnExit: End");
+fn step2_begin() {
+    println!("2️⃣ OnEnter: 2");
+}
+
+fn step7_end() {
+    println!("7️⃣ OnExit: End");
 }
 
 fn order_decorator<F>(f: F) -> i32
@@ -74,19 +78,19 @@ where
 {
     println!("3️⃣ Decorator: Before");
     let result = f();
-    println!("5️⃣ Decorator: After");
+    println!("6️⃣ Decorator: After");
     result
 }
 
 // Demonstrate execution order
 #[axin(
-    prologue(println!("1️⃣ Prologue: Setup");),
-    on_enter(step2_begin),
+    prologue(println!("4️⃣ Prologue: Setup");),
+    on_enter(step1_begin, step2_begin),
     decorator(order_decorator),
-    on_exit(step6_end)
+    on_exit(step7_end)
 )]
 fn execution_order_demo() -> i32 {
-    println!("4️⃣ Function Body: Main work");
+    println!("5️⃣ Function Body: Main work");
     42
 }
 

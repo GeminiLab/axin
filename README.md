@@ -34,11 +34,15 @@ fn setup() {
     println!("Function starting");
 }
 
+fn log_start(message: &str) {
+    println!("Starting: {}", message);
+}
+
 fn cleanup() {
     println!("Function completed");
 }
 
-#[axin(on_enter(setup), on_exit(cleanup))]
+#[axin(on_enter(setup, log_start("my_function")), on_exit(cleanup))]
 fn my_function() {
     println!("Executing main logic");
 }
@@ -47,6 +51,7 @@ fn main() {
     my_function();
     // Output:
     // Function starting
+    // Starting: my_function
     // Executing main logic  
     // Function completed
 }
@@ -120,11 +125,11 @@ fn complex_function() -> String {
 
 When combining features, execution follows this order:
 
-- Entry hook
+- Entry hooks (in declaration order)
 - Decorator
 - Prologue statements
 - Original function body
-- Exit hook
+- Exit hooks (in declaration order)
 
 ## API Reference
 
@@ -133,17 +138,24 @@ When combining features, execution follows this order:
 ```rust
 #[axin(
     prologue(statement1; statement2; ...),
-    on_enter(function_name),        // or on_enter(function_with_args("arg1", "arg2")),
+    on_enter(function_name),        // Single function
+    on_enter(func1, func2, func3),  // Multiple functions in one declaration
+    on_enter(func4),                // Additional separate declaration
     decorator(decorator_function),  // or decorator(parameterized_decorator(param1, param2)),
-    on_exit(cleanup_function)       // or on_exit(cleanup_function_with_args("arg1", "arg2")),
+    on_exit(cleanup_function),      // Single function
+    on_exit(cleanup1, cleanup2),    // Multiple functions in one declaration
 )]
 ```
 
 - `prologue(statements...)` - Insert statements at function start
-- `on_enter(function)` - Execute function before main function
+- `on_enter(function)` - Execute function(s) before main function
   - `on_enter(function_with_args("arg1", "arg2"))` - Pass arguments to the entry function
-- `on_exit(function)` - Execute function after main function
+  - `on_enter(func1, func2, func3)` - Execute multiple functions in sequence
+  - Multiple `on_enter` declarations can be used and will execute in order
+- `on_exit(function)` - Execute function(s) after main function
   - `on_exit(function_with_args("arg1", "arg2"))` - Pass arguments to the exit function
+  - `on_exit(func1, func2, func3)` - Execute multiple functions in sequence
+  - Multiple `on_exit` declarations can be used and will execute in order
 - `decorator(function)` - Wrap function with decorator
   - `decorator(function_with_args("arg1", "arg2"))` - Pass arguments to the decorator
 
